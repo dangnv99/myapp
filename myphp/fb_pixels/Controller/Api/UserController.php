@@ -20,7 +20,14 @@ class UserController extends BaseController
                 }
 
                 $arrUsers = $userModel->getUsers($intLimit);
-                $responseData = json_encode($arrUsers);
+                //var_dump($arrUsers);
+                //$responseData = json_encode($arrUsers);
+
+                if (count((array)$arrUsers) > 0) {
+                    $this->responseHandler($code = 200, $status = 'success', $arrUsers);
+                } else {
+                    echo "Error deleting record: ";
+                }
             } catch (Error $e) {
                 $strErrorDesc = $e->getMessage() . 'Something went wrong! Please contact support.';
                 $strErrorHeader = 'HTTP/1.1 500 Internal Server Error';
@@ -33,7 +40,7 @@ class UserController extends BaseController
         // send output
         if (!$strErrorDesc) {
             $this->sendOutput(
-                $responseData,
+
                 array('Content-Type: application/json', 'HTTP/1.1 200 OK')
             );
         } else {
@@ -49,14 +56,17 @@ class UserController extends BaseController
     {
         $strErrorDesc = '';
         $requestMethod = $_SERVER["REQUEST_METHOD"];
-        //$arrQueryStringParams = $this->validate_query_params();
 
         if (strtoupper($requestMethod) == 'GET') {
             try {
                 $userModel = new UserModel();
 
                 $arrUsers = $userModel->getDetail($_GET['shop'], $_GET['pixel_id']);
-                $responseData = json_encode($arrUsers);
+                if (count((array)$arrUsers) > 0) {
+                    $this->responseHandler($code = 200, $status = 'success', $arrUsers);
+                } else {
+                    echo "Error deleting record: ";
+                }
             } catch (Error $e) {
                 $strErrorDesc = $e->getMessage() . 'Something went wrong! Please contact support.';
                 $strErrorHeader = 'HTTP/1.1 500 Internal Server Error';
@@ -69,7 +79,7 @@ class UserController extends BaseController
         // send output
         if (!$strErrorDesc) {
             $this->sendOutput(
-                $responseData,
+
                 array('Content-Type: application/json', 'HTTP/1.1 200 OK')
             );
         } else {
@@ -87,8 +97,6 @@ class UserController extends BaseController
     {
         $strErrorDesc = '';
         $requestMethod = $_SERVER["REQUEST_METHOD"];
-        //$arrQueryStringParams = $this->validate_query_params();
-
         if (strtoupper($requestMethod) == 'POST') {
             try {
                 $userModel = new UserModel();
@@ -134,25 +142,54 @@ class UserController extends BaseController
                 $userModel = new UserModel();
                 $id =  mt_rand(10000000, 999999999);
                 //echo $id . "\n\r";
-                $shop = isset($_POST['shop']) ? $_POST['shop'] : "null";
-                $pixel_id = isset($_POST['pixel_id']) ? $_POST['pixel_id'] : "null";
-                $pixel_title = isset($_POST['pixel_title']) ? $_POST['pixel_title'] : "null";
+                $shop = isset($_POST['shop']) ? $_POST['shop'] : null;
+                $pixel_id = isset($_POST['pixel_id']) ? $_POST['pixel_id'] : null;
+                $pixel_title = isset($_POST['pixel_title']) ? $_POST['pixel_title'] : null;
                 $status = isset($_POST['status']) ? $_POST['status'] : 0;
-                $is_master = isset($_POST['is_master']) ? $_POST['is_master'] : "new";
-                $is_conversion_api = isset($_POST['is_conversion_api']) ? $_POST['is_conversion_api'] : "";
-                $access_token = isset($_POST['access_token']) ? $_POST['access_token'] : "";
+                $is_master = isset($_POST['is_master']) ? $_POST['is_master'] : 0;
+                $is_conversion_api = isset($_POST['is_conversion_api']) ? $_POST['is_conversion_api'] : 0;
+                $access_token = isset($_POST['access_token']) ? $_POST['access_token'] : null;
                 // $created_at = isset($_POST['created_at']) ? $_POST['created_at'] : "";
                 // $updated_at = isset($_POST['updated_at']) ? $_POST['updated_at'] : "";
-
-                $arrUsers = $userModel->postCreate($id, $shop, $pixel_id, $pixel_title, $status, $is_master, $is_conversion_api, $access_token);
-
-                if ($arrUsers) {
-                    $arrdata = $userModel->getReturn($id);
-                    //var_dump($arrdata);
-                    $this->responseHandler($code = 200, $status = 'success', $arrdata);
-                } else {
-                    echo "Error deleting record: " . $userModel->error;
+                $check = 0;
+                foreach ($_POST as $key => $val) {
+                    if ($key == 'shop' && $val == null) {
+                        $val =
+                            "The Shop field is required!";
+                        $check = 1;
+                    }
+                    if ($pixel_id == 'pixel_id' && $val == null) {
+                        $val =
+                            "The Shop field is required!";
+                        $check = 1;
+                    }
+                    if ($key == 'pixel_title' && $val == null) {
+                        $val =
+                            "The Shop field is required!";
+                        $check = 1;
+                    }
+                    if ($key == 'access_token' && $val == null) {
+                        $val =
+                            "The Shop field is required!";
+                        $check = 1;
+                    }
                 }
+                if ($check == 0) {
+                    $arrUsers = $userModel->postCreate($id, $shop, $pixel_id, $pixel_title, $status, $is_master, $is_conversion_api, $access_token);
+
+                    if ($arrUsers) {
+                        $arrdata = $userModel->getReturn($id);
+
+                        $this->responseHandler($code = 200, $status = 'success', $arrdata);
+                    } else {
+                        echo "Error deleting record: " . $userModel->error;
+                    }
+                } else {
+                    $arrdata = $userModel->getReturn($id);
+
+                    $this->responseHandler($code = 422, $status = 'error', $_POST);
+                }
+
                 //echo $id;
                 $responseData = "";
             } catch (Error $e) {
@@ -178,45 +215,39 @@ class UserController extends BaseController
         }
     }
 
-
     //Update
     public function UpdateAction()
     {
         $strErrorDesc = '';
         $requestMethod = $_SERVER["REQUEST_METHOD"];
-        $arrQueryStringParams = $this->getQueryStringParams();
-
         if (strtoupper($requestMethod) == 'POST') {
             try {
                 $userModel = new UserModel();
-                $data = implode(",", array_keys($_POST));
-                $data_ = implode(",", array_values($_POST));
-                die;
-                $id = $_POST['id'];
-                $shop = isset($_POST['shop']) ? $_POST['shop'] : "null";
-                $pixel_id = isset($_POST['pixel_id']) ? $_POST['pixel_id'] : "null";
-                $pixel_title = isset($_POST['pixel_title']) ? $_POST['pixel_title'] : "null";
-                $status = isset($_POST['status']) ? $_POST['status'] : 0;
-                $is_master = isset($_POST['is_master']) ? $_POST['is_master'] : "new";
-                $is_conversion_api = isset($_POST['is_conversion_api']) ? $_POST['is_conversion_api'] : "";
-                $access_token = isset($_POST['access_token']) ? $_POST['access_token'] : "";
-                $updated_at = time();
+                //$datakey = implode(",", array_keys($_POST));
+                //$dataVal = implode(",", array_values($_POST));
+                $push = "";
                 foreach ($_POST as $key => $val) {
                     if ($val == null) {
                     } else if (is_numeric($val)) {
                         $val = $val;
                     } elseif ($val == 'true' || $val == 'false') {
-                        $val .= $val;
+                        $val = $val;
+                    } else {
+                        $val = "'" . $val . "'";
                     }
-                }
-                $arrUsers = $userModel->postUpdate($data, $data_);
+                    if ($key != 'id') {
+                        $push .= $key . "=" . $val . ",";
+                    }
 
-                // if ($arrUsers->query($arrUsers) === TRUE) {
-                //     echo "Record deleted successfully";
-                // } else {
-                //     echo "Error deleting record: " . $userModel->error;
-                // }
-                $responseData = json_encode($arrUsers);
+                    // echo $val . "\n\r";
+                };
+                $arrUsers = $userModel->postUpdate($_POST['id'], rtrim($push, ","));
+                if ($arrUsers) {
+                    $arrdata = $userModel->getReturn($_POST['id']);
+                    $this->responseHandler($code = 200, $status = 'success', $arrdata);
+                } else {
+                    echo "Error deleting record: " . $userModel->error;
+                }
             } catch (Error $e) {
                 $strErrorDesc = $e->getMessage() . 'Something went wrong! Please contact support.';
                 $strErrorHeader = 'HTTP/1.1 500 Internal Server Error';
@@ -229,7 +260,6 @@ class UserController extends BaseController
         // send output
         if (!$strErrorDesc) {
             $this->sendOutput(
-                // $responseData,
                 array('Content-Type: application/json', 'HTTP/1.1 200 OK')
             );
         } else {

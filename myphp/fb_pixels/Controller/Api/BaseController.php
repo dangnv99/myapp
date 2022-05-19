@@ -57,7 +57,7 @@ class BaseController
             }
         }
 
-        echo $data;
+        //echo $data;
         exit;
     }
     function responseHandler($code = 200, $status = 'success', $payload = null)

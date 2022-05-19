@@ -45,11 +45,10 @@ class Database
     {
         try {
             $stmt = $this->Statement($query);
-
-            $result = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-            $stmt->close();
-
-            return $result;
+            // var_dump($stmt);
+            $affectRows = $stmt->affected_rows;
+            //echo $affectRows;
+            return $affectRows > 0;
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
         }
